@@ -48,25 +48,30 @@ module.exports = async (req, res) => {
       .slice(0, 15);
 
     const codes = results.map((p) => p.code).filter(Boolean);
+    let imgDebug = null;
     if (codes.length > 0) {
       try {
-        const imgRes = await fetch(
-          `https://world.openfoodfacts.org/api/v2/search?code=${codes.join(",")}&fields=code,image_small_url&page_size=${codes.length}`,
-          { headers: { "User-Agent": OFF_USER_AGENT } }
-        );
+        const imgUrl = `https://world.openfoodfacts.org/api/v2/search?code=${codes.join(",")}&fields=code,image_small_url&page_size=${codes.length}`;
+        const imgRes = await fetch(imgUrl, { headers: { "User-Agent": OFF_USER_AGENT } });
+        const rawText = await imgRes.text();
+        if (req.query.debug) imgDebug = { status: imgRes.status, url: imgUrl, body: rawText.slice(0, 500) };
         if (imgRes.ok) {
-          const imgData = await imgRes.json();
+          const imgData = JSON.parse(rawText);
           const imageByCode = {};
           (imgData.products || []).forEach((p) => {
             if (p.image_small_url) imageByCode[p.code] = p.image_small_url;
           });
           results.forEach((p) => { if (p.code) p.image = imageByCode[p.code] || null; });
         }
-      } catch {
-        // pas grave si les miniatures échouent, on garde les résultats sans image
+      } catch (e) {
+        if (req.query.debug) imgDebug = { error: String(e) };
       }
     }
 
+    if (req.query.debug) {
+      res.status(200).json({ results, debug: { codes, imgDebug } });
+      return;
+    }
     res.status(200).json({ results });
   } catch (err) {
     res.status(500).json({ error: "Erreur serveur" });
