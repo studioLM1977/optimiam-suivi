@@ -71,6 +71,23 @@ button{font-family:inherit;}
   color:#fff;
 }
 
+.chip-row{display:flex; flex-wrap:wrap; gap:0.4rem; margin:0.5rem 0 0.6rem;}
+.chip-row button{
+  border:1px solid var(--line);
+  background:#fff;
+  padding:0.4rem 0.75rem;
+  border-radius:2rem;
+  font-size:0.72rem;
+  font-weight:600;
+  color:var(--ink-soft);
+  cursor:pointer;
+}
+.chip-row button.active{
+  background:var(--sauge);
+  border-color:var(--sauge);
+  color:#fff;
+}
+
 .gauge-row{display:flex; flex-wrap:wrap; gap:0.7rem; margin-bottom:0.8rem;}
 .gauge{
   flex:1 1 calc(50% - 0.35rem);
