@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
   url.searchParams.set("q", `countries_tags:"en:france" -obsolete:true ${sanitized}`);
   url.searchParams.set("fields", "code,product_name,brands,quantity,nutriments");
   url.searchParams.set("langs", "fr");
-  url.searchParams.set("page_size", "12");
+  url.searchParams.set("page_size", "20");
 
   try {
     const r = await fetch(url.toString());
@@ -38,11 +38,32 @@ module.exports = async (req, res) => {
           fat: Number(n["fat_100g"]) || 0,
           carb: Number(n["carbohydrates_100g"]) || 0,
           sugar: Number(n["sugars_100g"]) || 0,
-          salt: Number(n["salt_100g"]) || 0
+          salt: Number(n["salt_100g"]) || 0,
+          image: null
         };
       })
       .filter((p) => p.kcal != null)
-      .slice(0, 10);
+      .slice(0, 15);
+
+    const codes = results.map((p) => p.code).filter(Boolean);
+    if (codes.length > 0) {
+      try {
+        const imgRes = await fetch(
+          `https://world.openfoodfacts.org/api/v2/search?code=${codes.join(",")}&fields=code,image_small_url&page_size=${codes.length}`
+        );
+        if (imgRes.ok) {
+          const imgData = await imgRes.json();
+          const imageByCode = {};
+          (imgData.products || []).forEach((p) => {
+            if (p.image_small_url) imageByCode[p.code] = p.image_small_url;
+          });
+          results.forEach((p) => { if (p.code) p.image = imageByCode[p.code] || null; });
+        }
+      } catch {
+        // pas grave si les miniatures échouent, on garde les résultats sans image
+      }
+    }
+
     res.status(200).json({ results });
   } catch (err) {
     res.status(500).json({ error: "Erreur serveur" });

@@ -13,7 +13,8 @@
   --ok:#4f7a52;
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;}
+html,body{margin:0;padding:0; overflow-x:hidden; overscroll-behavior-x:none;}
+html{touch-action:pan-y;}
 body{
   background:var(--cream);
   color:var(--ink);
@@ -21,6 +22,8 @@ body{
   -webkit-font-smoothing:antialiased;
   padding-bottom:78px;
   min-height:100vh;
+  touch-action:pan-y;
+  width:100%;
 }
 h1,h2,h3{font-family:'Fraunces',serif; margin:0;}
 button{font-family:inherit;}
@@ -202,6 +205,12 @@ form input, form select{
   letter-spacing:0.03em; font-size:0.64rem; margin:0.15rem 0;
 }
 .search-result:hover{border-color:var(--coral);}
+.search-result.with-thumb{display:flex; align-items:center; gap:0.6rem;}
+.search-result.with-thumb img, .search-result.with-thumb .thumb-placeholder{
+  width:44px; height:44px; flex:none; border-radius:0.5rem; object-fit:contain;
+  background:var(--cream-dim); border:1px solid var(--line);
+}
+.search-result-text{flex:1; min-width:0;}
 
 .panic-hero{
   background:linear-gradient(180deg,#2a2119 0%, var(--ink) 100%);

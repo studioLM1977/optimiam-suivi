@@ -802,10 +802,13 @@ async function searchOFF(query, container) {
       container.innerHTML = `<div class="empty-note">Aucun résultat</div>`;
       return;
     }
-    container.innerHTML = products.map((p, i) => `<button type="button" class="search-result" data-idx="${i}">
-        <strong>${p.name}</strong>
-        <span class="brand">${p.brand || "Marque non précisée"}</span>
-        <span>${Math.round(p.kcal)} kcal · ${p.fat.toFixed(1)}g lipides · ${p.carb.toFixed(1)}g glucides (dont ${p.sugar.toFixed(1)}g sucres) · ${p.salt.toFixed(1)}g sel / 100g</span>
+    container.innerHTML = products.map((p, i) => `<button type="button" class="search-result with-thumb" data-idx="${i}">
+        ${p.image ? `<img src="${p.image}" alt="" loading="lazy" onerror="this.remove()">` : `<span class="thumb-placeholder"></span>`}
+        <span class="search-result-text">
+          <strong>${p.name}</strong>
+          <span class="brand">${p.brand || "Marque non précisée"}</span>
+          <span>${Math.round(p.kcal)} kcal · ${p.fat.toFixed(1)}g lipides · ${p.carb.toFixed(1)}g glucides (dont ${p.sugar.toFixed(1)}g sucres) · ${p.salt.toFixed(1)}g sel / 100g</span>
+        </span>
       </button>`).join("");
     container.querySelectorAll("[data-idx]").forEach((btn) => {
       btn.addEventListener("click", () => {
