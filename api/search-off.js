@@ -1,3 +1,5 @@
+const OFF_USER_AGENT = "OptiMiam/1.0 (app perso de suivi MASLD; contact: lionelcmoa@yahoo.fr)";
+
 module.exports = async (req, res) => {
   if (req.method !== "GET") {
     res.status(405).json({ error: "Méthode non autorisée" });
@@ -18,7 +20,7 @@ module.exports = async (req, res) => {
   url.searchParams.set("page_size", "20");
 
   try {
-    const r = await fetch(url.toString());
+    const r = await fetch(url.toString(), { headers: { "User-Agent": OFF_USER_AGENT } });
     if (!r.ok) {
       res.status(502).json({ error: "Recherche Open Food Facts indisponible" });
       return;
@@ -49,7 +51,8 @@ module.exports = async (req, res) => {
     if (codes.length > 0) {
       try {
         const imgRes = await fetch(
-          `https://world.openfoodfacts.org/api/v2/search?code=${codes.join(",")}&fields=code,image_small_url&page_size=${codes.length}`
+          `https://world.openfoodfacts.org/api/v2/search?code=${codes.join(",")}&fields=code,image_small_url&page_size=${codes.length}`,
+          { headers: { "User-Agent": OFF_USER_AGENT } }
         );
         if (imgRes.ok) {
           const imgData = await imgRes.json();
