@@ -794,38 +794,35 @@ function renderBaseFoodResults({ cat, query }) {
 async function searchOFF(query, container) {
   container.innerHTML = `<div class="empty-note">Recherche...</div>`;
   try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10`;
-    const res = await fetch(url);
+    const res = await fetch(`/api/search-off?q=${encodeURIComponent(query)}`);
     const data = await res.json();
-    const products = (data.products || []).filter((p) => p.product_name);
+    if (!res.ok) throw new Error(data.error || "Erreur");
+    const products = data.results || [];
     if (products.length === 0) {
       container.innerHTML = `<div class="empty-note">Aucun résultat</div>`;
       return;
     }
-    container.innerHTML = products.map((p, i) => {
-      const n = p.nutriments || {};
-      const kcal = n["energy-kcal_100g"] ?? n["energy-kcal"] ?? 0;
-      const fat = n["fat_100g"] ?? 0;
-      const carb = n["carbohydrates_100g"] ?? 0;
-      const sugar = n["sugars_100g"] ?? 0;
-      const salt = n["salt_100g"] ?? 0;
-      const brand = (p.brands || "").split(",")[0].trim();
-      return `<button type="button" class="search-result" data-idx="${i}">
-        <strong>${p.product_name}</strong>
-        <span class="brand">${brand || "Marque non précisée"}</span>
-        <span>${Math.round(kcal)} kcal · ${fat.toFixed(1)}g lipides · ${carb.toFixed(1)}g glucides (dont ${sugar.toFixed(1)}g sucres) · ${salt.toFixed(1)}g sel / 100g</span>
-      </button>`;
-    }).join("");
+    container.innerHTML = products.map((p, i) => `<button type="button" class="search-result" data-idx="${i}">
+        <strong>${p.name}</strong>
+        <span class="brand">${p.brand || "Marque non précisée"}</span>
+        <span>${Math.round(p.kcal)} kcal · ${p.fat.toFixed(1)}g lipides · ${p.carb.toFixed(1)}g glucides (dont ${p.sugar.toFixed(1)}g sucres) · ${p.salt.toFixed(1)}g sel / 100g</span>
+      </button>`).join("");
     container.querySelectorAll("[data-idx]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const p = products[Number(btn.dataset.idx)];
-        document.getElementById("f-name").value = p.product_name;
-        setPer100(p.nutriments || {}, p.quantity);
+        document.getElementById("f-name").value = p.name;
+        setPer100({
+          "energy-kcal_100g": p.kcal,
+          fat_100g: p.fat,
+          carbohydrates_100g: p.carb,
+          sugars_100g: p.sugar,
+          salt_100g: p.salt
+        }, p.quantity);
         toast("Renseigne la quantité consommée");
       });
     });
   } catch (err) {
-    container.innerHTML = `<div class="empty-note">Recherche indisponible (hors-ligne ?)</div>`;
+    container.innerHTML = `<div class="empty-note">Recherche indisponible (hors-ligne ou erreur serveur).</div>`;
   }
 }
 
