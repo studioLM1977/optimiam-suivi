@@ -31,7 +31,7 @@ button{font-family:inherit;}
 .icon{display:inline-block; vertical-align:middle; flex-shrink:0;}
 
 .topbar{
-  padding:1.1rem 1.2rem 0.8rem;
+  padding:calc(1.1rem + env(safe-area-inset-top)) 1.2rem 0.8rem;
 }
 .topbar-row{
   display:flex;
