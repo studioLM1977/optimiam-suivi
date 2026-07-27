@@ -1,9 +1,10 @@
-const CACHE = "optimiam-v3";
+const CACHE = "optimiam-v4";
 const ASSETS = [
   "./index.html",
   "./style.css",
   "./app.js",
   "./manifest.json",
+  "./ciqual.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

@@ -46,71 +46,30 @@ const DEFAULT_SETTINGS = {
   ]
 };
 
-const BASE_FOOD_CATS = ["Féculents", "Légumes", "Fruits", "Protéines", "Produits laitiers", "Matières grasses"];
+const BASE_FOOD_CATS_FALLBACK = ["Féculents", "Légumes", "Fruits", "Protéines", "Produits laitiers", "Matières grasses"];
 
-const BASE_FOODS = [
-  { cat: "Féculents", name: "Pâtes (crues)", kcal: 353, fat: 1.5, carb: 71, sugar: 3, salt: 0.02 },
-  { cat: "Féculents", name: "Riz blanc (cru)", kcal: 349, fat: 0.6, carb: 78, sugar: 0.1, salt: 0.01 },
-  { cat: "Féculents", name: "Riz complet (cru)", kcal: 350, fat: 2.7, carb: 71, sugar: 0.9, salt: 0.01 },
-  { cat: "Féculents", name: "Semoule (crue)", kcal: 360, fat: 1, carb: 76, sugar: 0.5, salt: 0.01 },
-  { cat: "Féculents", name: "Quinoa (cru)", kcal: 368, fat: 6, carb: 64, sugar: 1, salt: 0.01 },
-  { cat: "Féculents", name: "Flocons d'avoine", kcal: 372, fat: 7, carb: 60, sugar: 1, salt: 0.02 },
-  { cat: "Féculents", name: "Pomme de terre", kcal: 77, fat: 0.1, carb: 17, sugar: 0.8, salt: 0.01 },
-  { cat: "Féculents", name: "Pain baguette", kcal: 274, fat: 1, carb: 55, sugar: 2, salt: 1.4 },
-  { cat: "Féculents", name: "Pain complet", kcal: 246, fat: 2.5, carb: 41, sugar: 3, salt: 1.1 },
-  { cat: "Féculents", name: "Lentilles (crues)", kcal: 353, fat: 1, carb: 60, sugar: 2, salt: 0.02 },
-  { cat: "Féculents", name: "Pois chiches (cuits)", kcal: 164, fat: 2.6, carb: 27, sugar: 4.8, salt: 0.24 },
-  { cat: "Légumes", name: "Tomate", kcal: 18, fat: 0.2, carb: 3.9, sugar: 2.6, salt: 0 },
-  { cat: "Légumes", name: "Carotte", kcal: 41, fat: 0.2, carb: 10, sugar: 4.7, salt: 0.07 },
-  { cat: "Légumes", name: "Courgette", kcal: 17, fat: 0.3, carb: 3.1, sugar: 2.5, salt: 0 },
-  { cat: "Légumes", name: "Brocoli", kcal: 34, fat: 0.4, carb: 7, sugar: 1.7, salt: 0.03 },
-  { cat: "Légumes", name: "Haricots verts", kcal: 31, fat: 0.1, carb: 7, sugar: 3.3, salt: 0 },
-  { cat: "Légumes", name: "Épinards", kcal: 23, fat: 0.4, carb: 3.6, sugar: 0.4, salt: 0.08 },
-  { cat: "Légumes", name: "Salade verte", kcal: 15, fat: 0.2, carb: 2.9, sugar: 0.8, salt: 0 },
-  { cat: "Légumes", name: "Poivron", kcal: 31, fat: 0.3, carb: 6, sugar: 4.2, salt: 0 },
-  { cat: "Légumes", name: "Aubergine", kcal: 25, fat: 0.2, carb: 6, sugar: 3.5, salt: 0 },
-  { cat: "Légumes", name: "Champignons de Paris", kcal: 22, fat: 0.3, carb: 3.3, sugar: 2, salt: 0.01 },
-  { cat: "Légumes", name: "Oignon", kcal: 40, fat: 0.1, carb: 9.3, sugar: 4.2, salt: 0 },
-  { cat: "Légumes", name: "Concombre", kcal: 12, fat: 0.1, carb: 2, sugar: 1.7, salt: 0 },
-  { cat: "Légumes", name: "Chou-fleur", kcal: 25, fat: 0.3, carb: 5, sugar: 2, salt: 0.03 },
-  { cat: "Fruits", name: "Pomme", kcal: 52, fat: 0.2, carb: 14, sugar: 10, salt: 0 },
-  { cat: "Fruits", name: "Banane", kcal: 89, fat: 0.3, carb: 23, sugar: 12, salt: 0 },
-  { cat: "Fruits", name: "Orange", kcal: 47, fat: 0.1, carb: 12, sugar: 9, salt: 0 },
-  { cat: "Fruits", name: "Poire", kcal: 57, fat: 0.1, carb: 15, sugar: 10, salt: 0 },
-  { cat: "Fruits", name: "Fraises", kcal: 32, fat: 0.3, carb: 8, sugar: 5, salt: 0 },
-  { cat: "Fruits", name: "Raisin", kcal: 69, fat: 0.2, carb: 18, sugar: 16, salt: 0 },
-  { cat: "Fruits", name: "Kiwi", kcal: 61, fat: 0.5, carb: 15, sugar: 9, salt: 0 },
-  { cat: "Fruits", name: "Pêche", kcal: 39, fat: 0.3, carb: 10, sugar: 8, salt: 0 },
-  { cat: "Fruits", name: "Ananas", kcal: 50, fat: 0.1, carb: 13, sugar: 10, salt: 0 },
-  { cat: "Fruits", name: "Pastèque", kcal: 30, fat: 0.2, carb: 8, sugar: 6, salt: 0 },
-  { cat: "Fruits", name: "Melon", kcal: 34, fat: 0.2, carb: 8, sugar: 8, salt: 0.02 },
-  { cat: "Fruits", name: "Mangue", kcal: 60, fat: 0.4, carb: 15, sugar: 14, salt: 0 },
-  { cat: "Protéines", name: "Poulet (blanc, cuit)", kcal: 165, fat: 3.6, carb: 0, sugar: 0, salt: 0.1 },
-  { cat: "Protéines", name: "Dinde (blanc, cuit)", kcal: 135, fat: 1, carb: 0, sugar: 0, salt: 0.09 },
-  { cat: "Protéines", name: "Bœuf 5% MG (cuit)", kcal: 172, fat: 5, carb: 0, sugar: 0, salt: 0.09 },
-  { cat: "Protéines", name: "Steak haché 15% MG (cuit)", kcal: 254, fat: 15, carb: 0, sugar: 0, salt: 0.1 },
-  { cat: "Protéines", name: "Jambon blanc", kcal: 107, fat: 3, carb: 0.5, sugar: 0.5, salt: 1.7 },
-  { cat: "Protéines", name: "Œuf entier", kcal: 143, fat: 10, carb: 0.7, sugar: 0.7, salt: 0.37 },
-  { cat: "Protéines", name: "Thon au naturel (boîte)", kcal: 116, fat: 1, carb: 0, sugar: 0, salt: 0.4 },
-  { cat: "Protéines", name: "Saumon (cuit)", kcal: 208, fat: 13, carb: 0, sugar: 0, salt: 0.09 },
-  { cat: "Protéines", name: "Cabillaud (cuit)", kcal: 90, fat: 0.7, carb: 0, sugar: 0, salt: 0.24 },
-  { cat: "Protéines", name: "Crevettes (cuites)", kcal: 99, fat: 0.5, carb: 0.3, sugar: 0, salt: 1.3 },
-  { cat: "Protéines", name: "Tofu nature", kcal: 76, fat: 4.2, carb: 1.9, sugar: 0.5, salt: 0.01 },
-  { cat: "Produits laitiers", name: "Yaourt nature", kcal: 61, fat: 3, carb: 4.7, sugar: 4.7, salt: 0.1 },
-  { cat: "Produits laitiers", name: "Fromage blanc 0%", kcal: 45, fat: 0.2, carb: 4, sugar: 4, salt: 0.06 },
-  { cat: "Produits laitiers", name: "Fromage blanc 20%", kcal: 90, fat: 3.5, carb: 4, sugar: 4, salt: 0.06 },
-  { cat: "Produits laitiers", name: "Skyr nature", kcal: 63, fat: 0.2, carb: 4, sugar: 4, salt: 0.06 },
-  { cat: "Produits laitiers", name: "Lait demi-écrémé", kcal: 46, fat: 1.6, carb: 4.8, sugar: 4.8, salt: 0.1 },
-  { cat: "Produits laitiers", name: "Comté", kcal: 400, fat: 32, carb: 0, sugar: 0, salt: 0.7 },
-  { cat: "Produits laitiers", name: "Emmental", kcal: 380, fat: 29, carb: 0, sugar: 0, salt: 0.6 },
-  { cat: "Produits laitiers", name: "Mozzarella", kcal: 280, fat: 22, carb: 2.2, sugar: 2.2, salt: 0.6 },
-  { cat: "Produits laitiers", name: "Camembert", kcal: 300, fat: 24, carb: 0.5, sugar: 0.5, salt: 1.5 },
-  { cat: "Matières grasses", name: "Huile d'olive", kcal: 900, fat: 100, carb: 0, sugar: 0, salt: 0 },
-  { cat: "Matières grasses", name: "Beurre doux", kcal: 717, fat: 82, carb: 0.7, sugar: 0.6, salt: 0.02 },
-  { cat: "Matières grasses", name: "Amandes", kcal: 579, fat: 50, carb: 22, sugar: 4, salt: 0 },
-  { cat: "Matières grasses", name: "Noix", kcal: 654, fat: 65, carb: 14, sugar: 2.6, salt: 0 },
-  { cat: "Matières grasses", name: "Avocat", kcal: 160, fat: 15, carb: 8.5, sugar: 0.7, salt: 0.01 }
-];
+let BASE_FOODS = [];
+let BASE_FOOD_CATS = BASE_FOOD_CATS_FALLBACK;
+let baseFoodsPromise = null;
+
+function loadBaseFoods() {
+  if (!baseFoodsPromise) {
+    baseFoodsPromise = fetch("./ciqual.json")
+      .then((r) => r.json())
+      .then((data) => {
+        BASE_FOODS = data;
+        const seen = [];
+        data.forEach((f) => { if (!seen.includes(f.cat)) seen.push(f.cat); });
+        BASE_FOOD_CATS = seen;
+        return BASE_FOODS;
+      })
+      .catch(() => {
+        BASE_FOODS = [];
+        return BASE_FOODS;
+      });
+  }
+  return baseFoodsPromise;
+}
 
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -453,11 +412,10 @@ function renderAjouter() {
     <div class="empty-note" id="photo-status" style="display:none; margin-top:0.4rem;"></div>
 
     <label style="margin-top:1rem;">Aliments de base (sans code-barre ni étiquette)</label>
+    <div class="empty-note" id="basefood-source-note">Table Ciqual (Anses) — Licence Ouverte / Etalab</div>
     <input id="basefood-search" type="text" placeholder="Rechercher un aliment (ex: poulet, yaourt, huile...)">
-    <div class="chip-row" id="basefood-cat-toggle">
-      ${BASE_FOOD_CATS.map((cat, i) => `<button type="button" data-cat="${cat}" class="${i === 0 ? "active" : ""}">${cat}</button>`).join("")}
-    </div>
-    <div class="search-results" id="basefood-results" style="max-height:280px;"></div>
+    <div class="chip-row" id="basefood-cat-toggle"></div>
+    <div class="search-results" id="basefood-results" style="max-height:280px;"><div class="empty-note">Chargement de la table Ciqual...</div></div>
 
     <label style="margin-top:1rem;">Rechercher un produit par nom (Open Food Facts)</label>
     <input id="off-search" type="text" placeholder="ex: yaourt nature, saumon...">
@@ -493,12 +451,23 @@ function renderAjouter() {
     </form>
   `;
 
-  renderBaseFoodResults({ cat: "Féculents" });
-  document.getElementById("basefood-cat-toggle").querySelectorAll("[data-cat]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#basefood-cat-toggle [data-cat]").forEach((b) => b.classList.toggle("active", b === btn));
-      document.getElementById("basefood-search").value = "";
-      renderBaseFoodResults({ cat: btn.dataset.cat });
+  loadBaseFoods().then(() => {
+    const toggle = document.getElementById("basefood-cat-toggle");
+    if (!toggle) return; // vue changée entre-temps
+    if (BASE_FOODS.length === 0) {
+      document.getElementById("basefood-results").innerHTML = `<div class="empty-note">Table Ciqual indisponible (hors-ligne ?)</div>`;
+      return;
+    }
+    toggle.innerHTML = BASE_FOOD_CATS.map((cat, i) => `<button type="button" data-cat="${cat}" class="${i === 0 ? "active" : ""}">${cat}</button>`).join("");
+    const sourceNote = document.getElementById("basefood-source-note");
+    if (sourceNote) sourceNote.textContent = `Table Ciqual (Anses) 2025, ${fmt(BASE_FOODS.length)} aliments — Licence Ouverte / Etalab`;
+    renderBaseFoodResults({ cat: BASE_FOOD_CATS[0] });
+    toggle.querySelectorAll("[data-cat]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        toggle.querySelectorAll("[data-cat]").forEach((b) => b.classList.toggle("active", b === btn));
+        document.getElementById("basefood-search").value = "";
+        renderBaseFoodResults({ cat: btn.dataset.cat });
+      });
     });
   });
   let basefoodSearchTimeout = null;
@@ -506,9 +475,10 @@ function renderAjouter() {
     clearTimeout(basefoodSearchTimeout);
     const q = e.target.value.trim();
     basefoodSearchTimeout = setTimeout(() => {
+      if (BASE_FOODS.length === 0) return;
       if (q.length === 0) {
         const activeBtn = document.querySelector("#basefood-cat-toggle [data-cat].active") || document.querySelector("#basefood-cat-toggle [data-cat]");
-        renderBaseFoodResults({ cat: activeBtn.dataset.cat });
+        renderBaseFoodResults({ cat: activeBtn ? activeBtn.dataset.cat : BASE_FOOD_CATS[0] });
       } else {
         renderBaseFoodResults({ query: q });
       }
@@ -763,18 +733,21 @@ function normalizeText(s) {
 
 function renderBaseFoodResults({ cat, query }) {
   const container = document.getElementById("basefood-results");
-  const items = query
+  const matches = query
     ? BASE_FOODS.filter((f) => normalizeText(f.name).includes(normalizeText(query)))
     : BASE_FOODS.filter((f) => f.cat === cat);
-  if (items.length === 0) {
+  if (matches.length === 0) {
     container.innerHTML = `<div class="empty-note">Aucun aliment trouvé</div>`;
     return;
   }
+  const CAP = 40;
+  const items = matches.slice(0, CAP);
+  const moreNote = matches.length > CAP ? `<div class="empty-note">${fmt(matches.length)} résultats — ${CAP} premiers affichés, précise ta recherche pour les autres</div>` : "";
   container.innerHTML = items.map((f, i) => `<button type="button" class="search-result" data-idx="${i}">
     <strong>${f.name}</strong>
     <span class="brand">${f.cat}</span>
     <span>${f.kcal} kcal · ${f.fat.toFixed(1)}g lipides · ${f.carb.toFixed(1)}g glucides (dont ${f.sugar.toFixed(1)}g sucres) · ${f.salt.toFixed(2)}g sel / 100g</span>
-  </button>`).join("");
+  </button>`).join("") + moreNote;
   container.querySelectorAll("[data-idx]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const f = items[Number(btn.dataset.idx)];
