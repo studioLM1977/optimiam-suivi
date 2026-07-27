@@ -1,4 +1,4 @@
-const OFF_USER_AGENT = "OptiMiam/1.0 (app perso de suivi MASLD; contact: lionelcmoa@yahoo.fr)";
+const OFF_USER_AGENT = "SAB-STENIR/1.0 (app perso de suivi MASLD; contact: lionelcmoa@yahoo.fr)";
 
 module.exports = async (req, res) => {
   if (req.method !== "GET") {

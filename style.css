@@ -32,6 +32,8 @@ button{font-family:inherit;}
 
 .topbar{
   padding:1.1rem 1.2rem 0.8rem;
+}
+.topbar-row{
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -41,8 +43,13 @@ button{font-family:inherit;}
   font-style:italic;
   font-weight:600;
   font-size:1.15rem;
+  letter-spacing:0.01em;
 }
 .topbar .date{font-size:0.72rem; color:var(--ink-soft);}
+.topbar .tagline{
+  font-size:0.7rem; font-style:italic; color:var(--sauge);
+  margin-top:0.25rem;
+}
 
 .view{display:none; padding:0 1.2rem 1.5rem; animation:fadeIn .2s ease;}
 .view.active{display:block;}

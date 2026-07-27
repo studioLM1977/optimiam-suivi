@@ -1,4 +1,4 @@
-const STORAGE_KEY = "optimiam_v1";
+const STORAGE_KEY = "optimiam_v1"; // ne pas renommer : changerait la clé localStorage et viderait les données existantes
 
 /* ---------- icônes (SVG ligne, remplace les emoji) ---------- */
 
@@ -132,11 +132,14 @@ let historyRange = 7;
 let panicTimer = null;
 
 const PANIC_MESSAGES = [
-  "Bois un grand verre d'eau et attends 10 minutes — c'est peut-être juste de la fatigue.",
-  "Une envie dure rarement plus de 15 minutes si on ne la nourrit pas.",
-  "Tu n'as pas besoin de te justifier. Juste de tenir 10 minutes.",
-  "Respire lentement en suivant le cercle. Le cerveau se calme avant l'estomac.",
-  "T'as déjà tenu pire que ça."
+  "Bois un grand verre d'eau et attends 10 minutes — c'est peut-être juste de la fatigue qui joue les gourmandes.",
+  "Une envie dure rarement plus de 15 minutes si on ne la nourrit pas. Le paquet de biscuits, lui, dure beaucoup plus longtemps si tu ne l'ouvres pas.",
+  "Tu n'as pas besoin de te justifier. Juste de tenir 10 minutes. Le frigo n'ira nulle part.",
+  "Respire lentement en suivant le cercle. Le cerveau se calme bien avant que l'estomac n'arrête de râler.",
+  "T'as déjà tenu pire que ça. Genre une réunion qui aurait pu être un email.",
+  "Le sucre te promet du réconfort. C'est un habitué du mensonge.",
+  "10 minutes, c'est à peu près le temps qu'il faut pour regretter d'avoir craqué. Dans les deux sens, d'ailleurs.",
+  "SAB-STENIR, ça se conjugue surtout maintenant, tout de suite, ici."
 ];
 
 /* ---------- helpers de calcul ---------- */
@@ -193,6 +196,52 @@ function weekWeightDelta() {
   return +(last - before.weightKg).toFixed(1);
 }
 
+const EMPTY_SLOT_JOKES = [
+  "Rien noté. Le silence est éloquent.",
+  "Créneau vide. Ça compte aussi comme une victoire.",
+  "Rien à signaler ici. Suspect, mais on valide.",
+  "Vide. Comme prévu, comme souhaité.",
+  "Aucune trace de grignotage. Beau travail.",
+  "Créneau libre. Profites-en pour respirer.",
+  "Rien noté. SAB-STENIR salue la performance."
+];
+
+function emptySlotNote() {
+  return EMPTY_SLOT_JOKES[Math.floor(Math.random() * EMPTY_SLOT_JOKES.length)];
+}
+
+const TAGLINES = [
+  "La gourmandise a rendez-vous, elle attendra.",
+  "Aujourd'hui, on regarde le gâteau dans les yeux et on gagne.",
+  "Le frigo n'a pas changé d'avis depuis hier. Toi non plus.",
+  "Discipline du jour : niveau ceinture noire.",
+  "On ne craque pas, on négocie avec soi-même. Et on gagne.",
+  "Le sucre a demandé une prolongation. Refusé.",
+  "Aujourd'hui : foie au calme, esprit tranquille.",
+  "Petite victoire discrète, grand progrès silencieux.",
+  "On n'abandonne pas un jeudi. Ni un autre jour d'ailleurs.",
+  "Le paquet de gâteaux resurgit toujours au mauvais moment. On le regarde passer.",
+  "Pas de miracle, juste de la constance. Et un peu d'humour.",
+  "S'abstenir, ce n'est pas se priver. C'est reprendre la main.",
+  "Le tiroir à chocolat te teste. Tu tiens le score.",
+  "Aujourd'hui, la raison gagne un point face à l'envie.",
+  "Ton foie ne demande pas grand-chose. Juste un peu de retenue.",
+  "Une envie n'est pas un ordre. C'est juste bruyant.",
+  "SAB-STENIR : parce que dire non a parfois du style.",
+  "Le grignotage improvisé, c'est pour les amateurs.",
+  "On tient la barre, même quand le vent (et le buffet) souffle fort.",
+  "Rien de spectaculaire aujourd'hui. Juste du solide.",
+  "La volonté, c'est un muscle. Celui-là, on l'entraîne.",
+  "Chaque petit choix compte. Même celui-ci, là, maintenant.",
+  "Pas de trophée pour aujourd'hui. Juste la satisfaction de tenir.",
+  "Le frigo t'appelle. Tu ne réponds pas à ce numéro."
+];
+
+function todayTagline() {
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  return TAGLINES[dayOfYear % TAGLINES.length];
+}
+
 const WALK_MET = 3.5; // marche modérée ~5 km/h
 
 function estimateWalkKcal(minutes, weightKg) {
@@ -236,6 +285,7 @@ function renderTopbar() {
   document.getElementById("today-label").textContent = new Date().toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long"
   });
+  document.getElementById("tagline-label").textContent = todayTagline();
 }
 
 function renderDashboard() {
@@ -346,7 +396,7 @@ function renderDashboard() {
     const threshold = DATA.settings.fatThresholds[slot.type];
     slotsHTML += `<div class="meal-slot">
       <div class="meal-slot-head"><span>${slot.label}</span>${mode === "foie" ? `<span class="thresh">seuil ${threshold}g</span>` : ""}</div>
-      ${meals.length === 0 ? `<div class="empty-note">Rien noté</div>` : meals.map((m) => {
+      ${meals.length === 0 ? `<div class="empty-note">${emptySlotNote()}</div>` : meals.map((m) =>{
         const over = mode === "foie" && Number(m.fatG) > threshold;
         return `<div class="meal-row" data-view-meal="${m.id}">
           <div>
@@ -401,14 +451,14 @@ function renderDashboard() {
       day.weightKg = weightInput.value ? Number(weightInput.value) : null;
       saveData();
       renderDashboard();
-      toast("Poids enregistré");
+      toast("Poids noté. La balance ne juge pas (enfin, un peu).");
     });
   }
   document.getElementById("walk-input").addEventListener("change", (e) => {
     day.walkMin = e.target.value ? Number(e.target.value) : null;
     saveData();
     renderDashboard();
-    toast("Marche enregistrée");
+    toast("Marche enregistrée. Les jambes ont fait leur part du contrat.");
   });
 }
 
@@ -423,11 +473,12 @@ function defaultSlotForNow() {
 function renderAjouter() {
   const root = document.getElementById("view-ajouter");
   root.innerHTML = `
-    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.8rem;">Ajouter un repas</h2>
+    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.2rem;">Ajouter un repas</h2>
+    <p class="empty-note" style="margin-bottom:0.8rem;">Confession alimentaire, sans jugement (enfin, presque).</p>
     <button type="button" class="btn ghost icon-btn" id="scan-toggle">${icon("scan", { size: 18 })}Scanner un code-barre</button>
     <div id="scanner-wrap" style="display:none; margin-top:0.7rem;">
       <div id="reader" style="border-radius:0.8rem; overflow:hidden;"></div>
-      <div class="empty-note" id="scan-status">Vise le code-barre du produit.</div>
+      <div class="empty-note" id="scan-status">Vise le code-barre. Pas de pression.</div>
     </div>
 
     <button type="button" class="btn ghost icon-btn" id="photo-toggle" style="margin-top:0.6rem;">${icon("camera", { size: 18 })}Photo de l'étiquette nutritionnelle</button>
@@ -578,7 +629,7 @@ function renderAjouter() {
     });
     saveData();
     stopScanner();
-    toast("Repas ajouté");
+    toast("Repas noté. Ton foie prend acte.");
     switchView("dashboard");
   });
 }
@@ -661,7 +712,7 @@ function applyPer100(qtyGrams) {
 
 function startScanner() {
   if (typeof Html5Qrcode === "undefined") {
-    document.getElementById("scan-status").textContent = "Scanner indisponible (hors-ligne ?)";
+    document.getElementById("scan-status").textContent = "Scanner aux abonnés absents (hors-ligne ?)";
     return;
   }
   qrScanner = new Html5Qrcode("reader");
@@ -672,14 +723,14 @@ function startScanner() {
     { facingMode: "environment" },
     config,
     (decodedText) => {
-      document.getElementById("scan-status").textContent = `Code détecté : ${decodedText}`;
+      document.getElementById("scan-status").textContent = `Cible verrouillée : ${decodedText}`;
       stopScanner();
       document.getElementById("scanner-wrap").style.display = "none";
       fetchByBarcode(decodedText);
     },
     () => {}
   ).catch(() => {
-    document.getElementById("scan-status").textContent = "Caméra indisponible — autorise l'accès caméra dans les réglages du navigateur.";
+    document.getElementById("scan-status").textContent = "La caméra fait la sourde oreille — autorise l'accès dans les réglages du navigateur.";
   });
 }
 
@@ -701,24 +752,24 @@ async function fetchByBarcode(barcode) {
       sugars_100g: known.sugar,
       salt_100g: known.salt
     }, known.quantity);
-    toast("Produit déjà scanné — renseigne la quantité consommée");
+    toast("On se connaît déjà, toi et moi. Renseigne juste la quantité.");
     return;
   }
-  toast("Recherche du produit...");
+  toast("Décryptage du code-barre en cours...");
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,nutriments,quantity`);
     const data = await res.json();
     if (data.status !== 1 || !data.product) {
-      toast("Produit introuvable dans la base");
+      toast("Introuvable — même la base de données t'abandonne.");
       return;
     }
     const name = data.product.product_name || "Produit scanné";
     document.getElementById("f-name").value = name;
     setPer100(data.product.nutriments || {}, data.product.quantity);
     saveScannedProduct({ code: barcode, name, quantity: data.product.quantity });
-    toast("Renseigne la quantité consommée");
+    toast("Trouvé ! Reste plus qu'à avouer la quantité.");
   } catch (err) {
-    toast("Recherche indisponible (hors-ligne ?)");
+    toast("Hors-ligne, comme ta motivation à 16h.");
   }
 }
 
@@ -737,7 +788,7 @@ function renderBaseFoodResults({ cat, query }) {
     ? BASE_FOODS.filter((f) => normalizeText(f.name).includes(normalizeText(query)))
     : BASE_FOODS.filter((f) => f.cat === cat);
   if (matches.length === 0) {
-    container.innerHTML = `<div class="empty-note">Aucun aliment trouvé</div>`;
+    container.innerHTML = `<div class="empty-note">Aucun aliment trouvé. Même Ciqual sèche sur ce coup-là.</div>`;
     return;
   }
   const CAP = 40;
@@ -759,7 +810,7 @@ function renderBaseFoodResults({ cat, query }) {
         sugars_100g: f.sugar,
         salt_100g: f.salt
       }, null);
-      toast("Renseigne la quantité consommée");
+      toast("Trouvé ! Reste plus qu'à avouer la quantité.");
       closeSearchOverlay();
     });
   });
@@ -781,7 +832,7 @@ function productResultButton(p, i) {
 
 function renderProductResults(items, container, header = "") {
   if (items.length === 0) {
-    container.innerHTML = header || `<div class="empty-note">Aucun résultat</div>`;
+    container.innerHTML = header || `<div class="empty-note">Aucun résultat. Le rayon est vide, ou le mot était bizarre.</div>`;
     return;
   }
   container.innerHTML = header + items.map((p, i) => productResultButton(p, i)).join("");
@@ -796,7 +847,7 @@ function renderProductResults(items, container, header = "") {
         sugars_100g: p.sugar,
         salt_100g: p.salt
       }, p.quantity);
-      toast("Renseigne la quantité consommée");
+      toast("Trouvé ! Reste plus qu'à avouer la quantité.");
       closeSearchOverlay();
     });
   });
@@ -939,7 +990,8 @@ function renderHistorique() {
   }
 
   root.innerHTML = `
-    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.8rem;">Historique</h2>
+    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.2rem;">Historique</h2>
+    <p class="empty-note" style="margin-bottom:0.8rem;">Les preuves, classées par ordre chronologique.</p>
     <div class="hist-toggle">
       <button data-range="7" class="${historyRange === 7 ? "active" : ""}">7 jours</button>
       <button data-range="30" class="${historyRange === 30 ? "active" : ""}">30 jours</button>
@@ -1062,7 +1114,7 @@ function buildDayDetailHTML(key) {
     const meals = mealsBySlot(day, slot.id);
     slotsHTML += `<div class="meal-slot">
       <div class="meal-slot-head"><span>${slot.label}</span></div>
-      ${meals.length === 0 ? `<div class="empty-note">Rien noté</div>` : meals.map((m) => `
+      ${meals.length === 0 ? `<div class="empty-note">${emptySlotNote()}</div>` : meals.map((m) =>`
         <div class="meal-row" data-view-meal="${m.id}">
           <div>
             <div class="meal-name">${m.name}</div>
@@ -1138,7 +1190,7 @@ function renderPanique() {
       })
       .catch(() => {
         msgEl.textContent = prevText;
-        toast("Message perso indisponible (hors-ligne ou erreur serveur)");
+        toast("Le coach a la flemme (hors-ligne ou erreur serveur).");
       })
       .finally(() => { btn.disabled = false; });
   });
@@ -1191,7 +1243,8 @@ function buildIAContext() {
 function renderIA() {
   const root = document.getElementById("view-ia");
   root.innerHTML = `
-    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.4rem;">Poser une question</h2>
+    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.2rem;">Poser une question</h2>
+    <p class="empty-note" style="margin-bottom:0.2rem;">Le coach ne dort jamais et ne juge (presque) jamais.</p>
     <p class="empty-note" style="margin-bottom:0.8rem;">Réponses générées à partir de ton suivi du jour — ne remplace pas un avis médical.</p>
     <textarea id="ia-question" rows="3" placeholder="ex: je pars en Sicile, qu'est-ce que je peux manger sans risque ?" style="width:100%; padding:0.7rem 0.8rem; border-radius:0.6rem; border:1px solid var(--line); font-family:inherit; font-size:0.9rem; background:#fff; resize:vertical;"></textarea>
     <button class="btn icon-btn" id="ia-ask-btn" style="margin-top:0.8rem;">${icon("ask", { size: 17 })}Demander</button>
@@ -1225,7 +1278,8 @@ function renderReglages() {
   const root = document.getElementById("view-reglages");
   const s = DATA.settings;
   root.innerHTML = `
-    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.8rem;">Réglages</h2>
+    <h2 style="font-size:1.3rem; font-weight:600; margin-bottom:0.2rem;">Réglages</h2>
+    <p class="empty-note" style="margin-bottom:0.8rem;">Les règles du jeu. Modifiables, mais pas trop souvent.</p>
     <form id="settings-form">
       <label>Poids de départ (kg)</label>
       <input type="number" step="0.1" id="s-start" value="${s.weightStartKg}">
@@ -1268,7 +1322,7 @@ function renderReglages() {
     s.fatThresholds.collation = Number(document.getElementById("s-fat-collation").value);
     s.fatThresholds.repas = Number(document.getElementById("s-fat-repas").value);
     saveData();
-    toast("Réglages enregistrés");
+    toast("Réglages enregistrés. Les règles du jeu viennent de changer.");
   });
   document.getElementById("export-btn").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: "application/json" });
@@ -1292,10 +1346,10 @@ function renderReglages() {
         DATA.days = DATA.days || {};
         DATA.scannedProducts = DATA.scannedProducts || [];
         saveData();
-        toast("Import réussi");
+        toast("Import réussi. Bienvenue de retour, passé.");
         renderAll();
       } catch (err) {
-        toast("Fichier invalide");
+        toast("Fichier invalide. Même lui refuse de coopérer.");
       }
     };
     reader.readAsText(file);

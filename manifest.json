@@ -1,6 +1,6 @@
 {
-  "name": "OptiMiam — Suivi",
-  "short_name": "OptiMiam",
+  "name": "SAB-STENIR — Suivi",
+  "short_name": "SAB-STENIR",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
