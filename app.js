@@ -74,14 +74,37 @@ function loadBaseFoods() {
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
-    const fresh = { settings: structuredClone(DEFAULT_SETTINGS), days: {} };
+    const fresh = { settings: structuredClone(DEFAULT_SETTINGS), days: {}, scannedProducts: [] };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
     return fresh;
   }
   const parsed = JSON.parse(raw);
   parsed.settings = Object.assign(structuredClone(DEFAULT_SETTINGS), parsed.settings || {});
   parsed.days = parsed.days || {};
+  parsed.scannedProducts = parsed.scannedProducts || [];
   return parsed;
+}
+
+function saveScannedProduct({ code, name, quantity }) {
+  if (!per100Ref) return;
+  const product = {
+    code: code || null,
+    name,
+    quantity: quantity || null,
+    kcal: per100Ref.kcal,
+    fat: per100Ref.fat,
+    carb: per100Ref.carb,
+    sugar: per100Ref.sugar,
+    salt: per100Ref.salt,
+    scannedAt: new Date().toISOString()
+  };
+  DATA.scannedProducts = DATA.scannedProducts.filter((p) => !(code && p.code === code));
+  DATA.scannedProducts.unshift(product);
+  saveData();
+}
+
+function searchScannedProducts(query) {
+  return DATA.scannedProducts.filter((p) => normalizeText(p.name).includes(normalizeText(query)));
 }
 
 function saveData() {
@@ -668,6 +691,19 @@ function stopScanner() {
 }
 
 async function fetchByBarcode(barcode) {
+  const known = DATA.scannedProducts.find((p) => p.code === barcode);
+  if (known) {
+    document.getElementById("f-name").value = known.name;
+    setPer100({
+      "energy-kcal_100g": known.kcal,
+      fat_100g: known.fat,
+      carbohydrates_100g: known.carb,
+      sugars_100g: known.sugar,
+      salt_100g: known.salt
+    }, known.quantity);
+    toast("Produit déjà scanné — renseigne la quantité consommée");
+    return;
+  }
   toast("Recherche du produit...");
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,nutriments,quantity`);
@@ -676,8 +712,10 @@ async function fetchByBarcode(barcode) {
       toast("Produit introuvable dans la base");
       return;
     }
-    document.getElementById("f-name").value = data.product.product_name || "Produit scanné";
+    const name = data.product.product_name || "Produit scanné";
+    document.getElementById("f-name").value = name;
     setPer100(data.product.nutriments || {}, data.product.quantity);
+    saveScannedProduct({ code: barcode, name, quantity: data.product.quantity });
     toast("Renseigne la quantité consommée");
   } catch (err) {
     toast("Recherche indisponible (hors-ligne ?)");
@@ -727,42 +765,70 @@ function renderBaseFoodResults({ cat, query }) {
   });
 }
 
+function productResultButton(p, i) {
+  const badge = p.scanned
+    ? `<span class="brand" style="color:var(--gold);">✓ Déjà scanné</span>`
+    : `<span class="brand">${p.brand || "Marque non précisée"}</span>`;
+  return `<button type="button" class="search-result with-thumb" data-idx="${i}">
+      ${p.image ? `<img src="${p.image}" alt="" loading="lazy" onerror="this.remove()">` : `<span class="thumb-placeholder"></span>`}
+      <span class="search-result-text">
+        <strong>${p.name}</strong>
+        ${badge}
+        <span>${Math.round(p.kcal)} kcal · ${p.fat.toFixed(1)}g lipides · ${p.carb.toFixed(1)}g glucides (dont ${p.sugar.toFixed(1)}g sucres) · ${p.salt.toFixed(1)}g sel / 100g</span>
+      </span>
+    </button>`;
+}
+
+function renderProductResults(items, container, header = "") {
+  if (items.length === 0) {
+    container.innerHTML = header || `<div class="empty-note">Aucun résultat</div>`;
+    return;
+  }
+  container.innerHTML = header + items.map((p, i) => productResultButton(p, i)).join("");
+  container.querySelectorAll("[data-idx]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = items[Number(btn.dataset.idx)];
+      document.getElementById("f-name").value = p.name;
+      setPer100({
+        "energy-kcal_100g": p.kcal,
+        fat_100g: p.fat,
+        carbohydrates_100g: p.carb,
+        sugars_100g: p.sugar,
+        salt_100g: p.salt
+      }, p.quantity);
+      toast("Renseigne la quantité consommée");
+      closeSearchOverlay();
+    });
+  });
+}
+
+function renderRecentScanned(container) {
+  if (DATA.scannedProducts.length === 0) {
+    container.innerHTML = `<div class="empty-note">Tape le nom d'un produit (3 lettres minimum)...</div>`;
+    return;
+  }
+  const items = DATA.scannedProducts.slice(0, 15).map((p) => ({ ...p, scanned: true }));
+  renderProductResults(items, container, `<div class="empty-note" style="margin-bottom:0.4rem;">Récemment scannés</div>`);
+}
+
 async function searchOFF(query, container) {
-  container.innerHTML = `<div class="empty-note">Recherche...</div>`;
+  const localMatches = searchScannedProducts(query).map((p) => ({ ...p, scanned: true }));
+  if (localMatches.length > 0) {
+    renderProductResults(localMatches, container);
+  } else {
+    container.innerHTML = `<div class="empty-note">Recherche...</div>`;
+  }
   try {
     const res = await fetch(`/api/search-off?q=${encodeURIComponent(query)}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Erreur");
-    const products = data.results || [];
-    if (products.length === 0) {
-      container.innerHTML = `<div class="empty-note">Aucun résultat</div>`;
-      return;
-    }
-    container.innerHTML = products.map((p, i) => `<button type="button" class="search-result with-thumb" data-idx="${i}">
-        ${p.image ? `<img src="${p.image}" alt="" loading="lazy" onerror="this.remove()">` : `<span class="thumb-placeholder"></span>`}
-        <span class="search-result-text">
-          <strong>${p.name}</strong>
-          <span class="brand">${p.brand || "Marque non précisée"}</span>
-          <span>${Math.round(p.kcal)} kcal · ${p.fat.toFixed(1)}g lipides · ${p.carb.toFixed(1)}g glucides (dont ${p.sugar.toFixed(1)}g sucres) · ${p.salt.toFixed(1)}g sel / 100g</span>
-        </span>
-      </button>`).join("");
-    container.querySelectorAll("[data-idx]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const p = products[Number(btn.dataset.idx)];
-        document.getElementById("f-name").value = p.name;
-        setPer100({
-          "energy-kcal_100g": p.kcal,
-          fat_100g: p.fat,
-          carbohydrates_100g: p.carb,
-          sugars_100g: p.sugar,
-          salt_100g: p.salt
-        }, p.quantity);
-        toast("Renseigne la quantité consommée");
-        closeSearchOverlay();
-      });
-    });
+    const localCodes = new Set(localMatches.map((p) => p.code).filter(Boolean));
+    const networkResults = (data.results || []).filter((p) => !p.code || !localCodes.has(p.code));
+    renderProductResults([...localMatches, ...networkResults], container);
   } catch (err) {
-    container.innerHTML = `<div class="empty-note">Recherche indisponible (hors-ligne ou erreur serveur).</div>`;
+    if (localMatches.length === 0) {
+      container.innerHTML = `<div class="empty-note">Recherche indisponible (hors-ligne ou erreur serveur).</div>`;
+    }
   }
 }
 
@@ -799,7 +865,7 @@ function openSearchOverlay(mode) {
   } else {
     input.placeholder = "ex: yaourt nature, saumon...";
     chips.style.display = "none";
-    resultsEl.innerHTML = `<div class="empty-note">Tape le nom d'un produit (3 lettres minimum)...</div>`;
+    renderRecentScanned(resultsEl);
   }
 
   overlay.classList.add("open");
@@ -829,9 +895,19 @@ function initSearchOverlay() {
         }
       }, 150);
     } else {
-      if (q.length < 3) {
-        resultsEl.innerHTML = `<div class="empty-note">Tape le nom d'un produit (3 lettres minimum)...</div>`;
+      if (q.length === 0) {
+        renderRecentScanned(resultsEl);
         return;
+      }
+      const localMatches = searchScannedProducts(q).map((p) => ({ ...p, scanned: true }));
+      if (q.length < 3) {
+        renderProductResults(localMatches, resultsEl, localMatches.length === 0 ? `<div class="empty-note">Tape encore un peu pour chercher en ligne (3 lettres minimum)...</div>` : "");
+        return;
+      }
+      if (localMatches.length > 0) {
+        renderProductResults(localMatches, resultsEl);
+      } else {
+        resultsEl.innerHTML = `<div class="empty-note">Recherche...</div>`;
       }
       searchOverlayTimeout = setTimeout(() => searchOFF(q, resultsEl), 450);
     }
@@ -1214,6 +1290,7 @@ function renderReglages() {
         DATA = parsed;
         DATA.settings = Object.assign(structuredClone(DEFAULT_SETTINGS), DATA.settings || {});
         DATA.days = DATA.days || {};
+        DATA.scannedProducts = DATA.scannedProducts || [];
         saveData();
         toast("Import réussi");
         renderAll();
