@@ -413,13 +413,10 @@ function renderAjouter() {
 
     <label style="margin-top:1rem;">Aliments de base (sans code-barre ni étiquette)</label>
     <div class="empty-note" id="basefood-source-note">Table Ciqual (Anses) — Licence Ouverte / Etalab</div>
-    <input id="basefood-search" type="text" placeholder="Rechercher un aliment (ex: poulet, yaourt, huile...)">
-    <div class="chip-row" id="basefood-cat-toggle"></div>
-    <div class="search-results" id="basefood-results" style="max-height:280px;"><div class="empty-note">Chargement de la table Ciqual...</div></div>
+    <input id="basefood-search" type="text" readonly style="cursor:pointer;" placeholder="Rechercher un aliment (ex: poulet, yaourt, huile...)">
 
     <label style="margin-top:1rem;">Rechercher un produit par nom (Open Food Facts)</label>
-    <input id="off-search" type="text" placeholder="ex: yaourt nature, saumon...">
-    <div class="search-results" id="off-results"></div>
+    <input id="off-search" type="text" readonly style="cursor:pointer;" placeholder="ex: yaourt nature, saumon...">
 
     <form id="meal-form">
       <label>Créneau</label>
@@ -452,48 +449,13 @@ function renderAjouter() {
   `;
 
   loadBaseFoods().then(() => {
-    const toggle = document.getElementById("basefood-cat-toggle");
-    if (!toggle) return; // vue changée entre-temps
-    if (BASE_FOODS.length === 0) {
-      document.getElementById("basefood-results").innerHTML = `<div class="empty-note">Table Ciqual indisponible (hors-ligne ?)</div>`;
-      return;
-    }
-    toggle.innerHTML = BASE_FOOD_CATS.map((cat, i) => `<button type="button" data-cat="${cat}" class="${i === 0 ? "active" : ""}">${cat}</button>`).join("");
     const sourceNote = document.getElementById("basefood-source-note");
-    if (sourceNote) sourceNote.textContent = `Table Ciqual (Anses) 2025, ${fmt(BASE_FOODS.length)} aliments — Licence Ouverte / Etalab`;
-    renderBaseFoodResults({ cat: BASE_FOOD_CATS[0] });
-    toggle.querySelectorAll("[data-cat]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        toggle.querySelectorAll("[data-cat]").forEach((b) => b.classList.toggle("active", b === btn));
-        document.getElementById("basefood-search").value = "";
-        renderBaseFoodResults({ cat: btn.dataset.cat });
-      });
-    });
+    if (sourceNote && BASE_FOODS.length > 0) {
+      sourceNote.textContent = `Table Ciqual (Anses) 2025, ${fmt(BASE_FOODS.length)} aliments — Licence Ouverte / Etalab`;
+    }
   });
-  let basefoodSearchTimeout = null;
-  document.getElementById("basefood-search").addEventListener("input", (e) => {
-    clearTimeout(basefoodSearchTimeout);
-    const q = e.target.value.trim();
-    basefoodSearchTimeout = setTimeout(() => {
-      if (BASE_FOODS.length === 0) return;
-      if (q.length === 0) {
-        const activeBtn = document.querySelector("#basefood-cat-toggle [data-cat].active") || document.querySelector("#basefood-cat-toggle [data-cat]");
-        renderBaseFoodResults({ cat: activeBtn ? activeBtn.dataset.cat : BASE_FOOD_CATS[0] });
-      } else {
-        renderBaseFoodResults({ query: q });
-      }
-    }, 150);
-  });
-
-  const results = document.getElementById("off-results");
-  const searchInput = document.getElementById("off-search");
-  let searchTimeout = null;
-  searchInput.addEventListener("input", () => {
-    clearTimeout(searchTimeout);
-    const q = searchInput.value.trim();
-    if (q.length < 3) { results.innerHTML = ""; return; }
-    searchTimeout = setTimeout(() => searchOFF(q, results), 450);
-  });
+  document.getElementById("basefood-search").addEventListener("click", () => openSearchOverlay("basefood"));
+  document.getElementById("off-search").addEventListener("click", () => openSearchOverlay("off"));
 
   document.getElementById("scan-toggle").addEventListener("click", () => {
     const wrap = document.getElementById("scanner-wrap");
@@ -732,7 +694,7 @@ function normalizeText(s) {
 }
 
 function renderBaseFoodResults({ cat, query }) {
-  const container = document.getElementById("basefood-results");
+  const container = document.getElementById("search-overlay-results");
   const matches = query
     ? BASE_FOODS.filter((f) => normalizeText(f.name).includes(normalizeText(query)))
     : BASE_FOODS.filter((f) => f.cat === cat);
@@ -760,6 +722,7 @@ function renderBaseFoodResults({ cat, query }) {
         salt_100g: f.salt
       }, null);
       toast("Renseigne la quantité consommée");
+      closeSearchOverlay();
     });
   });
 }
@@ -795,11 +758,84 @@ async function searchOFF(query, container) {
           salt_100g: p.salt
         }, p.quantity);
         toast("Renseigne la quantité consommée");
+        closeSearchOverlay();
       });
     });
   } catch (err) {
     container.innerHTML = `<div class="empty-note">Recherche indisponible (hors-ligne ou erreur serveur).</div>`;
   }
+}
+
+let searchOverlayMode = null;
+let searchOverlayTimeout = null;
+
+function openSearchOverlay(mode) {
+  searchOverlayMode = mode;
+  const overlay = document.getElementById("search-overlay");
+  const input = document.getElementById("search-overlay-input");
+  const chips = document.getElementById("search-overlay-chips");
+  const resultsEl = document.getElementById("search-overlay-results");
+
+  input.value = "";
+  chips.innerHTML = "";
+  resultsEl.innerHTML = "";
+
+  if (mode === "basefood") {
+    input.placeholder = "Rechercher un aliment (ex: poulet, yaourt, huile...)";
+    chips.style.display = "flex";
+    if (BASE_FOODS.length === 0) {
+      resultsEl.innerHTML = `<div class="empty-note">Table Ciqual indisponible (hors-ligne ?)</div>`;
+    } else {
+      chips.innerHTML = BASE_FOOD_CATS.map((cat, i) => `<button type="button" data-cat="${cat}" class="${i === 0 ? "active" : ""}">${cat}</button>`).join("");
+      renderBaseFoodResults({ cat: BASE_FOOD_CATS[0] });
+      chips.querySelectorAll("[data-cat]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          chips.querySelectorAll("[data-cat]").forEach((b) => b.classList.toggle("active", b === btn));
+          input.value = "";
+          renderBaseFoodResults({ cat: btn.dataset.cat });
+        });
+      });
+    }
+  } else {
+    input.placeholder = "ex: yaourt nature, saumon...";
+    chips.style.display = "none";
+    resultsEl.innerHTML = `<div class="empty-note">Tape le nom d'un produit (3 lettres minimum)...</div>`;
+  }
+
+  overlay.classList.add("open");
+  setTimeout(() => input.focus(), 300);
+}
+
+function closeSearchOverlay() {
+  document.getElementById("search-overlay").classList.remove("open");
+  searchOverlayMode = null;
+}
+
+function initSearchOverlay() {
+  document.getElementById("search-overlay-close").addEventListener("click", closeSearchOverlay);
+  document.getElementById("search-overlay-input").addEventListener("input", (e) => {
+    clearTimeout(searchOverlayTimeout);
+    const q = e.target.value.trim();
+    const resultsEl = document.getElementById("search-overlay-results");
+    if (searchOverlayMode === "basefood") {
+      searchOverlayTimeout = setTimeout(() => {
+        if (BASE_FOODS.length === 0) return;
+        if (q.length === 0) {
+          const chips = document.getElementById("search-overlay-chips");
+          const activeBtn = chips.querySelector("[data-cat].active") || chips.querySelector("[data-cat]");
+          renderBaseFoodResults({ cat: activeBtn ? activeBtn.dataset.cat : BASE_FOOD_CATS[0] });
+        } else {
+          renderBaseFoodResults({ query: q });
+        }
+      }, 150);
+    } else {
+      if (q.length < 3) {
+        resultsEl.innerHTML = `<div class="empty-note">Tape le nom d'un produit (3 lettres minimum)...</div>`;
+        return;
+      }
+      searchOverlayTimeout = setTimeout(() => searchOFF(q, resultsEl), 450);
+    }
+  });
 }
 
 function renderHistorique() {
@@ -1219,6 +1255,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("modal-overlay").addEventListener("click", (e) => {
     if (e.target.id === "modal-overlay") hideModal();
   });
+  initSearchOverlay();
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
