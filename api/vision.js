@@ -4,7 +4,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     res.status(500).json({ error: "Clé API manquante côté serveur" });
     return;
@@ -32,34 +32,30 @@ Règles :
 - Aucun texte, commentaire ou balise en dehors de l'objet JSON.`;
 
   try {
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{
             role: "user",
-            content: [
-              { type: "text", text: "Extrait les valeurs nutritionnelles de cette photo." },
-              { type: "image_url", image_url: { url: `data:${mimeType || "image/jpeg"};base64,${imageBase64}` } }
+            parts: [
+              { text: "Extrait les valeurs nutritionnelles de cette photo." },
+              { inline_data: { mime_type: mimeType || "image/jpeg", data: imageBase64 } }
             ]
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 400
-      })
-    });
+          }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } }
+        })
+      }
+    );
     const data = await r.json();
     if (!r.ok) {
       res.status(502).json({ error: data.error?.message || "Erreur API vision" });
       return;
     }
-    const raw = data.choices?.[0]?.message?.content || "";
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) {
       res.status(502).json({ error: "Réponse illisible du modèle" });
